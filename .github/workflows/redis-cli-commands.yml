@@ -13,7 +13,7 @@ jobs:
     runs-on: ubuntu-latest
     
     steps:
-      - name: Шаг 3: Установка Docker на Ubuntu
+      - name: 🛠️ Шаг 3.1-3.6: Установка Docker
         run: |
           sudo apt update
           sudo apt install apt-transport-https ca-certificates curl gnupg lsb-release -y
@@ -21,19 +21,27 @@ jobs:
           echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
           sudo apt update
           sudo apt install docker-ce docker-ce-cli containerd.io -y
-          sudo docker run hello-world
+          # Добавляем пользователя в группу docker (хотя на гитхаб-хосте это может быть неактуально, но соответствует заданию)
           sudo usermod -aG docker $USER || true
           newgrp docker || true
 
-      - name: Шаг 4: Запуск Redis в Docker
+      - name: ✅ Шаг 3.7: Проверка установки Docker (hello-world)
+        run: sudo docker run hello-world
+
+      - name: 🚀 Шаг 4: Загрузка, запуск и тестирование Redis
         run: |
+          # 4.1: Загрузка образа
           docker pull redis
+          
+          # 4.2: Запуск контейнера
           docker run -d --name ${{ env.REDIS_CONTAINER_NAME }} -p 6379:6379 redis
           sleep 5
           docker ps
+          
+          # 4.3: Проверка работы (PING)
           docker exec -it ${{ env.REDIS_CONTAINER_NAME }} redis-cli ping
           
-      - name: Очистка
+      - name: 🗑️ Очистка
         if: always()
         run: |
           docker stop ${{ env.REDIS_CONTAINER_NAME }} || true
