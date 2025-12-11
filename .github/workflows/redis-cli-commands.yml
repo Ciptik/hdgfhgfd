@@ -1,18 +1,18 @@
-name: Установка Docker и запуск Redis
+name: Комплексная практическая работа — Docker + Redis
 
 on:
-  workflow_dispatch:  # Запуск вручную из интерфейса GitHub
+  workflow_dispatch:  # Ручной запуск из интерфейса GitHub
   push:
-    branches: [ main ]  # Или по пушу в main, если нужно
+    branches: [ main ]  # Опционально: при пуше в main
 
 jobs:
-  setup-docker-and-redis:
+  setup-and-run-redis:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout репозитория (опционально)
         uses: actions/checkout@v4
 
-      - name: Обновление пакетов
+      - name: Обновление списка пакетов
         run: sudo apt update
 
       - name: Установка зависимостей для Docker
@@ -21,33 +21,33 @@ jobs:
       - name: Добавление GPG-ключа Docker
         run: curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg
 
-      - name: Добавление репозитория Docker
+      - name: Добавление официального репозитория Docker
         run: echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
 
-      - name: Обновление пакетов после добавления репозитория
+      - name: Обновление списка пакетов после добавления репозитория
         run: sudo apt update
 
-      - name: Установка Docker
+      - name: Установка Docker Engine
         run: sudo apt install -y docker-ce docker-ce-cli containerd.io
 
       - name: Проверка установки Docker (hello-world)
-        run: sudo docker run hello-world
+        run: docker run hello-world
 
-      - name: Добавление пользователя в группу docker (чтобы не использовать sudo)
-        run: sudo usermod -aG docker $USER
-
-      # Примечание: В GitHub Actions перелогин не нужен — следующие команды уже могут работать без sudo благодаря правам runner'а.
-      # Но для надёжности оставляем без sudo, если не сработает — добавьте sudo.
-
-      - name: Загрузка образа Redis
+      - name: Загрузка официального образа Redis
         run: docker pull redis
 
-      - name: Запуск контейнера Redis
+      - name: Запуск контейнера Redis в фоновом режиме
         run: docker run -d --name my-redis -p 6379:6379 redis
 
-      - name: Проверка работы Redis
-        run: docker exec -it my-redis redis-cli ping
+      - name: Небольшая пауза для запуска Redis
+        run: sleep 10
+
+      - name: Проверка работы Redis (команда ping)
+        run: docker exec my-redis redis-cli ping
         # Ожидаемый вывод: PONG
 
       - name: Вывод списка запущенных контейнеров (для отчёта)
         run: docker ps
+
+      - name: Вывод логов Redis (дополнительно, для отчёта)
+        run: docker logs my-redis | tail -20
